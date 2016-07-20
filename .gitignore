@@ -1,0 +1,11 @@
+# Binary junk
+
+postgres.so
+
+# CMake-related stuff.
+CMakeFiles
+CMakeCache.txt
+cmake_install.cmake
+Makefile
+compile_commands.json
+install_manifest.txt

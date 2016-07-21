@@ -6,6 +6,6 @@ const char *lily_dynaload_table[] = {
     ,"m:row_count\0(Result):Integer"
     ,"C\02Conn"
     ,"m:query\0(Conn,String,String...):Either[String,Result]"
-    ,"m:open\0(*String,*String,*String,*String,*String):Option[Conn]"
+    ,"m:open\0(*String,*String,*String,*String,*String):Either[String,Conn]"
     ,"Z"
 };

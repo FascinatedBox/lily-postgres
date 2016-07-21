@@ -229,13 +229,13 @@ void lily_postgres_Conn_query(lily_vm_state *vm)
 }
 
 /**
-method Conn.open(host: *String="", port: *String="", dbname: *String="", name: *String="", pass: *String=""):Option[Conn]
+method Conn.open(host: *String="", port: *String="", dbname: *String="", name: *String="", pass: *String=""):Either[String, Conn]
 
 Attempt to connect to the postgres server, using the values provided.
 
-On success, the result is a `Some` containing a newly-made `Conn`.
+On success, the result is a `Right` containing a newly-made `Conn`.
 
-On failure, the result is a `None`.
+On failure, the result is a `Left` containing an error message.
 */
 void lily_postgres_Conn_open(lily_vm_state *vm)
 {
@@ -261,6 +261,7 @@ void lily_postgres_Conn_open(lily_vm_state *vm)
 
     PGconn *conn = PQsetdbLogin(host, port, NULL, NULL, dbname, name, pass);
     lily_pg_conn_value *new_val;
+    lily_instance_val *variant;
 
     switch (PQstatus(conn)) {
         case CONNECTION_OK:
@@ -271,14 +272,17 @@ void lily_postgres_Conn_open(lily_vm_state *vm)
             new_val->is_open = 1;
             new_val->conn = conn;
 
-            lily_instance_val *variant = lily_new_some();
+            variant = lily_new_right();
             lily_variant_set_foreign(variant, 0,
                     (lily_foreign_val *)new_val);
             lily_return_filled_variant(vm, variant);
             break;
         default:
-            lily_return_empty_variant(vm, lily_get_none(vm));
-            return;
+            variant = lily_new_left();
+            lily_string_val *sv = lily_new_raw_string(PQerrorMessage(conn));
+            lily_variant_set_string(variant, 0, sv);
+            lily_return_filled_variant(vm, variant);
+            break;
     }
 }
 

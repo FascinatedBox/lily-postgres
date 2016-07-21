@@ -136,7 +136,7 @@ void destroy_conn(lily_generic_val *g)
 }
 
 /**
-method Conn.query(self: Conn, format: String, values: List[String]...):Either[String, Result]
+method Conn.query(self: Conn, format: String, values: String...):Either[String, Result]
 
 Perform a query using 'format'. Any "?" value found within 'format' will be
 replaced with an entry from 'values'.

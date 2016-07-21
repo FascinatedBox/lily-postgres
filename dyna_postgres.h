@@ -5,7 +5,7 @@ const char *lily_dynaload_table[] = {
     ,"m:each_row\0(Result,Function(List[String]))"
     ,"m:row_count\0(Result):Integer"
     ,"C\02Conn"
-    ,"m:query\0(Conn,String,List[String]...):Either[String,Result]"
+    ,"m:query\0(Conn,String,String...):Either[String,Result]"
     ,"m:open\0(*String,*String,*String,*String,*String):Option[Conn]"
     ,"Z"
 };

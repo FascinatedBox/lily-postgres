@@ -1,9 +1,10 @@
 cmake_minimum_required(VERSION 2.6)
 project("lily-postgres")
 
+set(CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake" ${CMAKE_MODULE_PATH})
+
 find_package(PQ)
 
-set(CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake" ${CMAKE_MODULE_PATH})
 include_directories(${PQ_INCLUDE_DIRS})
 include_directories("${CMAKE_INSTALL_PREFIX}/lily/")
 

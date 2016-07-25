@@ -9,6 +9,10 @@
 #include "lily_api_value.h"
 #include "lily_api_vm.h"
 
+/* The cid table is used to provide ids to foreign structs. These ids are later
+   used to get the proper class name when printing, and also when casting a
+   value away from Dynamic. */
+
 #define CID_RESULT cid_table[0]
 #define CID_CONN   cid_table[1]
 
@@ -217,7 +221,7 @@ void lily_postgres_Conn_query(lily_vm_state *vm)
     res->refcount = 0;
     res->current_row = 0;
     res->is_closed = 0;
-    res->instance_id = CID_CONN;
+    res->instance_id = CID_RESULT;
     res->destroy_func = destroy_result;
     res->pg_result = raw_result;
     res->row_count = PQntuples(raw_result);

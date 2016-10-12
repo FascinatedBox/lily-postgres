@@ -6,7 +6,7 @@ set(CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake" ${CMAKE_MODULE_PATH})
 find_package(PQ)
 
 include_directories(${PQ_INCLUDE_DIRS})
-include_directories("${CMAKE_INSTALL_PREFIX}/lily/")
+include_directories("${CMAKE_INSTALL_PREFIX}/include/lily/")
 
 add_library(postgres SHARED lily_postgres.c)
 target_link_libraries(postgres pq)

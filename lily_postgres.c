@@ -166,11 +166,11 @@ void lily_postgres_Conn_query(lily_state *s)
 
         if (ch == '?') {
             if (arg_pos == num_values) {
-                lily_instance_val *variant = lily_new_left();
+                lily_instance_val *variant = lily_new_enum_n(1);
                 lily_string_val *sv = lily_new_raw_string(
                         "Not enough arguments for format.\n");
                 lily_variant_set_string(variant, 0, sv);
-                lily_return_filled_variant(s, variant);
+                lily_return_filled_variant(s, LILY_LEFT_ID, variant);
                 return;
             }
 
@@ -208,11 +208,11 @@ void lily_postgres_Conn_query(lily_state *s)
     if (status == PGRES_BAD_RESPONSE ||
         status == PGRES_NONFATAL_ERROR ||
         status == PGRES_FATAL_ERROR) {
-        lily_instance_val *variant = lily_new_left();
+        lily_instance_val *variant = lily_new_enum_n(1);
         lily_string_val *sv = lily_new_raw_string(
                 PQerrorMessage(conn_value->conn));
         lily_variant_set_string(variant, 0, sv);
-        lily_return_filled_variant(s, variant);
+        lily_return_filled_variant(s, LILY_LEFT_ID, variant);
         return;
     }
 
@@ -220,15 +220,14 @@ void lily_postgres_Conn_query(lily_state *s)
     res->refcount = 0;
     res->current_row = 0;
     res->is_closed = 0;
-    res->instance_id = CID_RESULT;
     res->destroy_func = destroy_result;
     res->pg_result = raw_result;
     res->row_count = PQntuples(raw_result);
     res->column_count = PQnfields(raw_result);
 
-    lily_instance_val *variant = lily_new_right();
-    lily_variant_set_foreign(variant, 0, (lily_foreign_val *)res);
-    lily_return_filled_variant(s, variant);
+    lily_instance_val *variant = lily_new_enum_n(1);
+    lily_variant_set_foreign(variant, 0, CID_RESULT, (lily_foreign_val *)res);
+    lily_return_filled_variant(s, LILY_RIGHT_ID, variant);
 }
 
 /**
@@ -269,21 +268,21 @@ void lily_postgres_Conn_open(lily_state *s)
     switch (PQstatus(conn)) {
         case CONNECTION_OK:
             new_val = lily_malloc(sizeof(lily_pg_conn_value));
-            new_val->instance_id = CID_CONN;
             new_val->destroy_func = destroy_conn;
             new_val->refcount = 0;
             new_val->is_open = 1;
             new_val->conn = conn;
 
-            variant = lily_new_right();
-            lily_variant_set_foreign(variant, 0, (lily_foreign_val *)new_val);
-            lily_return_filled_variant(s, variant);
+            variant = lily_new_enum_n(1);
+            lily_variant_set_foreign(variant, 0, CID_CONN,
+                    (lily_foreign_val *)new_val);
+            lily_return_filled_variant(s, LILY_RIGHT_ID, variant);
             break;
         default:
-            variant = lily_new_left();
+            variant = lily_new_enum_n(1);
             lily_string_val *sv = lily_new_raw_string(PQerrorMessage(conn));
             lily_variant_set_string(variant, 0, sv);
-            lily_return_filled_variant(s, variant);
+            lily_return_filled_variant(s, LILY_LEFT_ID, variant);
             break;
     }
 }

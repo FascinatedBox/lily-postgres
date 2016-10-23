@@ -18,8 +18,11 @@
 /**
 package postgres
 
-This package provides a limited, but usable interface for interacting with a
-postgres server.
+This package provides Lily with a simple wrapper over libpq. You'll need libpq's
+development headers, but there are no other requirements. You can install this
+using Lily's `garden` via:
+
+`garden install github Fascinatedbox/postgres`.
 */
 
 /**
@@ -71,8 +74,8 @@ void lily_postgres_Result_close(lily_state *s)
 /**
 method Result.each_row(self: Result, fn: Function(List[String]))
 
-This loops through each row in 'self', calling 'fn' for each row that is found.
-If 'self' has no rows, or has been closed, then this does nothing.
+This loops through each row in `self`, calling `fn` for each row that is found.
+If `self` has no rows, or has been closed, then this does nothing.
 */
 void lily_postgres_Result_each_row(lily_state *s)
 {
@@ -110,7 +113,7 @@ void lily_postgres_Result_each_row(lily_state *s)
 /**
 method Result.row_count(self: Result): Integer
 
-Returns the number of rows present within 'self'.
+Returns the number of rows present within `self`.
 */
 void lily_postgres_Result_row_count(lily_state *s)
 {
@@ -141,8 +144,8 @@ void destroy_conn(lily_generic_val *g)
 /**
 method Conn.query(self: Conn, format: String, values: String...):Either[String, Result]
 
-Perform a query using 'format'. Any "?" value found within 'format' will be
-replaced with an entry from 'values'.
+Perform a query using `format`. Any `"?"` value found within `format` will be
+replaced with an entry from `values`.
 
 On success, the result is a `Right` containing a `Result`.
 

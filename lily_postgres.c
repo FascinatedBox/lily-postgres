@@ -33,10 +33,11 @@ database. The class provides a very basic set of methods to allow interaction
 with the rows as a `List[String]`.
 */
 typedef struct {
-    LILY_FOREIGN_HEADER_WITH_EXTRA(is_closed)
+    LILY_FOREIGN_HEADER
     uint64_t column_count;
     uint64_t row_count;
     uint64_t current_row;
+    uint64_t is_closed;
     PGresult *pg_result;
 } lily_pg_result;
 
@@ -129,7 +130,8 @@ class Conn
 The `Conn` class represents a connection to a postgres server.
 */
 typedef struct lily_pg_conn_value_ {
-    LILY_FOREIGN_HEADER_WITH_EXTRA(is_open)
+    LILY_FOREIGN_HEADER
+    uint64_t is_open;
     PGconn *conn;
 } lily_pg_conn_value;
 

@@ -8,12 +8,7 @@
 #include "lily_api_msgbuf.h"
 #include "lily_api_value.h"
 
-/* The cid table is used to provide ids to foreign structs. These ids are later
-   used to get the proper class name when printing, and also when casting a
-   value away from Dynamic. */
-
-#define CID_RESULT cid_table[0]
-#define CID_CONN   cid_table[1]
+#include "extras_postgres.h"
 
 /**
 package postgres
@@ -39,18 +34,18 @@ typedef struct {
     uint64_t current_row;
     uint64_t is_closed;
     PGresult *pg_result;
-} lily_pg_result;
+} lily_postgres_Result;
 
 void close_result(lily_generic_val *g)
 {
-    lily_pg_result *result = (lily_pg_result *)g;
+    lily_postgres_Result *result = (lily_postgres_Result *)g;
     if (result->is_closed == 0)
         PQclear(result->pg_result);
 
     result->is_closed = 1;
 }
 
-void destroy_result(lily_generic_val *g)
+void destroy_Result(lily_generic_val *g)
 {
     close_result(g);
     lily_free(g);
@@ -66,7 +61,7 @@ either the gc or refcounting.
 void lily_postgres_Result_close(lily_state *s)
 {
     lily_generic_val *generic_to_close = lily_arg_generic(s, 0);
-    lily_pg_result *to_close = (lily_pg_result *)generic_to_close;
+    lily_postgres_Result *to_close = ARG_Result(s, 0);
 
     close_result(generic_to_close);
     to_close->row_count = 0;
@@ -80,8 +75,7 @@ If `self` has no rows, or has been closed, then this does nothing.
 */
 void lily_postgres_Result_each_row(lily_state *s)
 {
-    lily_pg_result *boxed_result = (lily_pg_result *)
-            lily_arg_generic(s, 0);
+    lily_postgres_Result *boxed_result = ARG_Result(s, 0);
 
     PGresult *raw_result = boxed_result->pg_result;
     if (raw_result == NULL || boxed_result->row_count == 0)
@@ -118,7 +112,7 @@ Returns the number of rows present within `self`.
 */
 void lily_postgres_Result_row_count(lily_state *s)
 {
-    lily_pg_result *boxed_result = (lily_pg_result *)
+    lily_postgres_Result *boxed_result = (lily_postgres_Result *)
             lily_arg_generic(s, 0);
 
     lily_return_integer(s, boxed_result->current_row);
@@ -129,15 +123,15 @@ class Conn
 
 The `Conn` class represents a connection to a postgres server.
 */
-typedef struct lily_pg_conn_value_ {
+typedef struct lily_postgres_Conn_ {
     LILY_FOREIGN_HEADER
     uint64_t is_open;
     PGconn *conn;
-} lily_pg_conn_value;
+} lily_postgres_Conn;
 
-void destroy_conn(lily_generic_val *g)
+void destroy_Conn(lily_generic_val *g)
 {
-    lily_pg_conn_value *conn_value = (lily_pg_conn_value *)g;
+    lily_postgres_Conn *conn_value = (lily_postgres_Conn *)g;
 
     PQfinish(conn_value->conn);
     lily_free(conn_value);
@@ -155,14 +149,12 @@ On failure, the result is a `Left` containing a `String` describing the error.
 */
 void lily_postgres_Conn_query(lily_state *s)
 {
-    lily_pg_conn_value *conn_value =
-            (lily_pg_conn_value *)lily_arg_generic(s, 0);
+    lily_postgres_Conn *conn_value = ARG_Conn(s, 0);
     char *fmt = lily_arg_string_raw(s, 1);
     lily_list_val *vararg_lv = lily_arg_list(s, 2);
 
     int arg_pos = 0, fmt_index = 0, text_start = 0, text_stop = 0;
     lily_msgbuf *msgbuf = lily_get_msgbuf(s);
-    uint16_t *cid_table = lily_get_cid_table(s);
 
     int num_values = lily_list_num_values(vararg_lv);
 
@@ -221,17 +213,16 @@ void lily_postgres_Conn_query(lily_state *s)
         return;
     }
 
-    lily_pg_result *res = lily_malloc(sizeof(lily_pg_result));
-    res->refcount = 0;
+    lily_postgres_Result *res;
+    INIT_Result(s, res)
     res->current_row = 0;
     res->is_closed = 0;
-    res->destroy_func = destroy_result;
     res->pg_result = raw_result;
     res->row_count = PQntuples(raw_result);
     res->column_count = PQnfields(raw_result);
 
     lily_instance_val *variant = lily_new_enum_n(1);
-    lily_variant_set_foreign(variant, 0, CID_RESULT, (lily_foreign_val *)res);
+    lily_variant_set_foreign(variant, 0, ID_Result(s), (lily_foreign_val *)res);
     lily_return_filled_variant(s, LILY_RIGHT_ID, variant);
 }
 
@@ -251,7 +242,6 @@ void lily_postgres_Conn_open(lily_state *s)
     const char *dbname = NULL;
     const char *name = NULL;
     const char *pass = NULL;
-    uint16_t *cid_table = lily_get_cid_table(s);
 
     switch (lily_arg_count(s)) {
         case 5:
@@ -267,19 +257,17 @@ void lily_postgres_Conn_open(lily_state *s)
     }
 
     PGconn *conn = PQsetdbLogin(host, port, NULL, NULL, dbname, name, pass);
-    lily_pg_conn_value *new_val;
+    lily_postgres_Conn *new_val;
     lily_instance_val *variant;
 
     switch (PQstatus(conn)) {
         case CONNECTION_OK:
-            new_val = lily_malloc(sizeof(lily_pg_conn_value));
-            new_val->destroy_func = destroy_conn;
-            new_val->refcount = 0;
+            INIT_Conn(s, new_val)
             new_val->is_open = 1;
             new_val->conn = conn;
 
             variant = lily_new_enum_n(1);
-            lily_variant_set_foreign(variant, 0, CID_CONN,
+            lily_variant_set_foreign(variant, 0, ID_Conn(s),
                     (lily_foreign_val *)new_val);
             lily_return_filled_variant(s, LILY_RIGHT_ID, variant);
             break;

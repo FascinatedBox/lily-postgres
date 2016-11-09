@@ -81,12 +81,12 @@ void lily_postgres_Result_each_row(lily_state *s)
     if (raw_result == NULL || boxed_result->row_count == 0)
         return;
 
-    lily_prepare_call(s, lily_arg_function(s, 1));
+    lily_call_prepare(s, lily_arg_function(s, 1));
 
     int row;
     for (row = 0;row < boxed_result->row_count;row++) {
         int num_cols = boxed_result->column_count;
-        lily_list_val *lv = lily_new_list_val_n(num_cols);
+        lily_list_val *lv = lily_new_list(num_cols);
 
         int col;
         for (col = 0;col < num_cols;col++) {
@@ -97,11 +97,11 @@ void lily_postgres_Result_each_row(lily_state *s)
             else
                 field_text = PQgetvalue(raw_result, row, col);
 
-            lily_list_set_string(lv, col, lily_new_raw_string(field_text));
+            lily_list_set_string(lv, col, lily_new_string(field_text));
         }
 
         lily_push_list(s, lv);
-        lily_exec_prepared(s, 1);
+        lily_call_exec_prepared(s, 1);
     }
 }
 
@@ -163,11 +163,11 @@ void lily_postgres_Conn_query(lily_state *s)
 
         if (ch == '?') {
             if (arg_pos == num_values) {
-                lily_instance_val *variant = lily_new_enum_n(1);
-                lily_string_val *sv = lily_new_raw_string(
+                lily_variant_val *variant = lily_new_variant(1);
+                lily_string_val *sv = lily_new_string(
                         "Not enough arguments for format.\n");
                 lily_variant_set_string(variant, 0, sv);
-                lily_return_filled_variant(s, LILY_LEFT_ID, variant);
+                lily_return_variant(s, LILY_LEFT_ID, variant);
                 return;
             }
 
@@ -205,11 +205,11 @@ void lily_postgres_Conn_query(lily_state *s)
     if (status == PGRES_BAD_RESPONSE ||
         status == PGRES_NONFATAL_ERROR ||
         status == PGRES_FATAL_ERROR) {
-        lily_instance_val *variant = lily_new_enum_n(1);
-        lily_string_val *sv = lily_new_raw_string(
+        lily_variant_val *variant = lily_new_variant(1);
+        lily_string_val *sv = lily_new_string(
                 PQerrorMessage(conn_value->conn));
         lily_variant_set_string(variant, 0, sv);
-        lily_return_filled_variant(s, LILY_LEFT_ID, variant);
+        lily_return_variant(s, LILY_LEFT_ID, variant);
         return;
     }
 
@@ -221,9 +221,9 @@ void lily_postgres_Conn_query(lily_state *s)
     res->row_count = PQntuples(raw_result);
     res->column_count = PQnfields(raw_result);
 
-    lily_instance_val *variant = lily_new_enum_n(1);
+    lily_variant_val *variant = lily_new_variant(1);
     lily_variant_set_foreign(variant, 0, ID_Result(s), (lily_foreign_val *)res);
-    lily_return_filled_variant(s, LILY_RIGHT_ID, variant);
+    lily_return_variant(s, LILY_RIGHT_ID, variant);
 }
 
 /**
@@ -258,7 +258,7 @@ void lily_postgres_Conn_open(lily_state *s)
 
     PGconn *conn = PQsetdbLogin(host, port, NULL, NULL, dbname, name, pass);
     lily_postgres_Conn *new_val;
-    lily_instance_val *variant;
+    lily_variant_val *variant;
 
     switch (PQstatus(conn)) {
         case CONNECTION_OK:
@@ -266,16 +266,16 @@ void lily_postgres_Conn_open(lily_state *s)
             new_val->is_open = 1;
             new_val->conn = conn;
 
-            variant = lily_new_enum_n(1);
+            variant = lily_new_variant(1);
             lily_variant_set_foreign(variant, 0, ID_Conn(s),
                     (lily_foreign_val *)new_val);
-            lily_return_filled_variant(s, LILY_RIGHT_ID, variant);
+            lily_return_variant(s, LILY_RIGHT_ID, variant);
             break;
         default:
-            variant = lily_new_enum_n(1);
-            lily_string_val *sv = lily_new_raw_string(PQerrorMessage(conn));
+            variant = lily_new_variant(1);
+            lily_string_val *sv = lily_new_string(PQerrorMessage(conn));
             lily_variant_set_string(variant, 0, sv);
-            lily_return_filled_variant(s, LILY_LEFT_ID, variant);
+            lily_return_variant(s, LILY_LEFT_ID, variant);
             break;
     }
 }

@@ -7,7 +7,7 @@
 #define INIT_Result(state, target) \
 target = lily_malloc(sizeof(lily_postgres_Result)); \
 target->refcount = 0; \
-target->destroy_func = destroy_Result;
+target->destroy_func = (lily_destroy_func)destroy_Result;
 
 
 #define ARG_Conn(state, index) \
@@ -18,4 +18,4 @@ target->destroy_func = destroy_Result;
 #define INIT_Conn(state, target) \
 target = lily_malloc(sizeof(lily_postgres_Conn)); \
 target->refcount = 0; \
-target->destroy_func = destroy_Conn;
+target->destroy_func = (lily_destroy_func)destroy_Conn;

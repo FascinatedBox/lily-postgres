@@ -167,7 +167,7 @@ void lily_postgres_Conn_query(lily_state *s)
                 return;
             }
 
-            lily_mb_add_range(msgbuf, fmt, text_start, text_stop);
+            lily_mb_add_slice(msgbuf, fmt, text_start, text_stop);
             text_start = fmt_index + 1;
             text_stop = text_start;
 
@@ -191,7 +191,7 @@ void lily_postgres_Conn_query(lily_state *s)
     if (text_start == 0)
         query_string = fmt;
     else {
-        lily_mb_add_range(msgbuf, fmt, text_start, text_stop);
+        lily_mb_add_slice(msgbuf, fmt, text_start, text_stop);
         query_string = lily_mb_get(msgbuf);
     }
 

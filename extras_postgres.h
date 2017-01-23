@@ -9,11 +9,9 @@
 #define ID_Conn(state) lily_cid_at(state, 1)
 #define ID_Result(state) lily_cid_at(state, 0)
 
-#define INIT_Conn(state, target) \
-target = lily_malloc(sizeof(lily_postgres_Conn)); \
-target->refcount = 0; \
-target->destroy_func = (lily_destroy_func)destroy_Conn;
-#define INIT_Result(state, target) \
-target = lily_malloc(sizeof(lily_postgres_Result)); \
-target->refcount = 0; \
-target->destroy_func = (lily_destroy_func)destroy_Result;
+#define INIT_Conn(state) \
+(lily_postgres_Conn *)lily_new_foreign(state, ID_Conn(s), (lily_destroy_func)destroy_Conn, sizeof(lily_postgres_Conn *))
+
+#define INIT_Result(state) \
+(lily_postgres_Result *)lily_new_foreign(state, ID_Result(s), (lily_destroy_func)destroy_Result, sizeof(lily_postgres_Result *))
+

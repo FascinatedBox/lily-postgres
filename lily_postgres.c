@@ -4,7 +4,6 @@
 
 #include "libpq-fe.h"
 
-#include "lily_api_alloc.h"
 #include "lily_api_msgbuf.h"
 #include "lily_api_value.h"
 
@@ -47,7 +46,6 @@ void close_result(lily_postgres_Result *result)
 void destroy_Result(lily_postgres_Result *r)
 {
     close_result(r);
-    lily_free(r);
 }
 
 /**
@@ -84,7 +82,7 @@ void lily_postgres_Result_each_row(lily_state *s)
     int row;
     for (row = 0;row < boxed_result->row_count;row++) {
         int num_cols = boxed_result->column_count;
-        lily_list_val *lv = lily_new_list(num_cols);
+        lily_container_val *lv = lily_new_list(num_cols);
 
         int col;
         for (col = 0;col < num_cols;col++) {
@@ -95,7 +93,8 @@ void lily_postgres_Result_each_row(lily_state *s)
             else
                 field_text = PQgetvalue(raw_result, row, col);
 
-            lily_list_set_string(lv, col, lily_new_string(field_text));
+            lily_nth_set(lv, col,
+                    lily_box_string(s, lily_new_string(field_text)));
         }
 
         lily_push_list(s, lv);
@@ -110,8 +109,7 @@ Returns the number of rows present within `self`.
 */
 void lily_postgres_Result_row_count(lily_state *s)
 {
-    lily_postgres_Result *boxed_result = (lily_postgres_Result *)
-            lily_arg_generic(s, 0);
+    lily_postgres_Result *boxed_result = ARG_Result(s, 0);
 
     lily_return_integer(s, boxed_result->current_row);
 }
@@ -130,7 +128,6 @@ typedef struct lily_postgres_Conn_ {
 void destroy_Conn(lily_postgres_Conn *conn_value)
 {
     PQfinish(conn_value->conn);
-    lily_free(conn_value);
 }
 
 /**
@@ -147,23 +144,23 @@ void lily_postgres_Conn_query(lily_state *s)
 {
     lily_postgres_Conn *conn_value = ARG_Conn(s, 0);
     char *fmt = lily_arg_string_raw(s, 1);
-    lily_list_val *vararg_lv = lily_arg_list(s, 2);
+    lily_container_val *vararg_lv = lily_arg_container(s, 2);
 
     int arg_pos = 0, fmt_index = 0, text_start = 0, text_stop = 0;
     lily_msgbuf *msgbuf = lily_get_msgbuf(s);
 
-    int num_values = lily_list_num_values(vararg_lv);
+    int num_values = lily_container_num_values(vararg_lv);
 
     while (1) {
         char ch = fmt[fmt_index];
 
         if (ch == '?') {
             if (arg_pos == num_values) {
-                lily_variant_val *variant = lily_new_variant(1);
+                lily_container_val *variant = lily_new_left();
                 lily_string_val *sv = lily_new_string(
                         "Not enough arguments for format.\n");
-                lily_variant_set_string(variant, 0, sv);
-                lily_return_variant(s, LILY_LEFT_ID, variant);
+                lily_nth_set(variant, 0, lily_box_string(s, sv));
+                lily_return_variant(s, variant);
                 return;
             }
 
@@ -171,8 +168,8 @@ void lily_postgres_Conn_query(lily_state *s)
             text_start = fmt_index + 1;
             text_stop = text_start;
 
-            const char *text = lily_list_string_raw(vararg_lv, arg_pos);
-            lily_mb_add(msgbuf, text);
+            lily_value *v = lily_nth_get(vararg_lv, arg_pos);
+            lily_mb_add(msgbuf, lily_value_string_raw(v));
             arg_pos++;
         }
         else {
@@ -201,25 +198,24 @@ void lily_postgres_Conn_query(lily_state *s)
     if (status == PGRES_BAD_RESPONSE ||
         status == PGRES_NONFATAL_ERROR ||
         status == PGRES_FATAL_ERROR) {
-        lily_variant_val *variant = lily_new_variant(1);
+        lily_container_val *variant = lily_new_left();
         lily_string_val *sv = lily_new_string(
                 PQerrorMessage(conn_value->conn));
-        lily_variant_set_string(variant, 0, sv);
-        lily_return_variant(s, LILY_LEFT_ID, variant);
+        lily_nth_set(variant, 0, lily_box_string(s, sv));
+        lily_return_variant(s, variant);
         return;
     }
 
-    lily_postgres_Result *res;
-    INIT_Result(s, res)
+    lily_postgres_Result *res = INIT_Result(s);
     res->current_row = 0;
     res->is_closed = 0;
     res->pg_result = raw_result;
     res->row_count = PQntuples(raw_result);
     res->column_count = PQnfields(raw_result);
 
-    lily_variant_val *variant = lily_new_variant(1);
-    lily_variant_set_foreign(variant, 0, ID_Result(s), (lily_foreign_val *)res);
-    lily_return_variant(s, LILY_RIGHT_ID, variant);
+    lily_container_val *variant = lily_new_right();
+    lily_nth_set(variant, 0, lily_box_foreign(s, (lily_foreign_val *)res));
+    lily_return_variant(s, variant);
 }
 
 /**
@@ -254,24 +250,24 @@ void lily_postgres_Conn_open(lily_state *s)
 
     PGconn *conn = PQsetdbLogin(host, port, NULL, NULL, dbname, name, pass);
     lily_postgres_Conn *new_val;
-    lily_variant_val *variant;
+    lily_container_val *variant;
 
     switch (PQstatus(conn)) {
         case CONNECTION_OK:
-            INIT_Conn(s, new_val)
+            new_val = INIT_Conn(s);
             new_val->is_open = 1;
             new_val->conn = conn;
 
-            variant = lily_new_variant(1);
-            lily_variant_set_foreign(variant, 0, ID_Conn(s),
-                    (lily_foreign_val *)new_val);
-            lily_return_variant(s, LILY_RIGHT_ID, variant);
+            variant = lily_new_right();
+            lily_nth_set(variant, 0,
+                    lily_box_foreign(s, (lily_foreign_val *)new_val));
+            lily_return_variant(s, variant);
             break;
         default:
-            variant = lily_new_variant(1);
+            variant = lily_new_left();
             lily_string_val *sv = lily_new_string(PQerrorMessage(conn));
-            lily_variant_set_string(variant, 0, sv);
-            lily_return_variant(s, LILY_LEFT_ID, variant);
+            lily_nth_set(variant, 0, lily_box_string(s, sv));
+            lily_return_variant(s, variant);
             break;
     }
 }

@@ -3,15 +3,15 @@
 
 #define ARG_Conn(state, index) \
 (lily_postgres_Conn *)lily_arg_generic(s, index)
-#define ARG_Result(state, index) \
-(lily_postgres_Result *)lily_arg_generic(s, index)
+#define ARG_Cursor(state, index) \
+(lily_postgres_Cursor *)lily_arg_generic(s, index)
 
 #define ID_Conn(state) lily_cid_at(state, 1)
-#define ID_Result(state) lily_cid_at(state, 0)
+#define ID_Cursor(state) lily_cid_at(state, 0)
 
 #define INIT_Conn(state) \
 (lily_postgres_Conn *)lily_new_foreign(state, ID_Conn(s), (lily_destroy_func)destroy_Conn, sizeof(lily_postgres_Conn *))
 
-#define INIT_Result(state) \
-(lily_postgres_Result *)lily_new_foreign(state, ID_Result(s), (lily_destroy_func)destroy_Result, sizeof(lily_postgres_Result *))
+#define INIT_Cursor(state) \
+(lily_postgres_Cursor *)lily_new_foreign(state, ID_Cursor(s), (lily_destroy_func)destroy_Cursor, sizeof(lily_postgres_Cursor *))
 

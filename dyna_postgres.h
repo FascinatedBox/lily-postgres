@@ -2,13 +2,13 @@
 #include "lily_api_dyna.h"
 
 const char *lily_dynaload_table[] = {
-    "\2Result\0Conn\0"
-    ,"C\3Result"
-    ,"m\0close\0(Result)"
-    ,"m\0each_row\0(Result,Function(List[String]))"
-    ,"m\0row_count\0(Result):Integer"
-    ,"C\2Conn"
-    ,"m\0query\0(Conn,String,String...):Either[String,Result]"
+    "\2Cursor\0Conn\0"
+    ,"C\03Cursor"
+    ,"m\0close\0(Cursor)"
+    ,"m\0each_row\0(Cursor,Function(List[String]))"
+    ,"m\0row_count\0(Cursor):Integer"
+    ,"C\02Conn"
+    ,"m\0query\0(Conn,String,String...):Result[String,Cursor]"
     ,"m\0open\0(*String,*String,*String,*String,*String):Either[String,Conn]"
     ,"Z"
 };

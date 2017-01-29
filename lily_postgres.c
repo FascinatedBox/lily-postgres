@@ -20,9 +20,9 @@ using Lily's `garden` via:
 */
 
 /**
-class Result
+class Cursor
 
-The `Result` class provides a wrapper over the result of querying the postgres
+The `Cursor` class provides a wrapper over the result of querying the postgres
 database. The class provides a very basic set of methods to allow interaction
 with the rows as a `List[String]`.
 */
@@ -33,9 +33,9 @@ typedef struct {
     uint64_t current_row;
     uint64_t is_closed;
     PGresult *pg_result;
-} lily_postgres_Result;
+} lily_postgres_Cursor;
 
-void close_result(lily_postgres_Result *result)
+void close_result(lily_postgres_Cursor *result)
 {
     if (result->is_closed == 0)
         PQclear(result->pg_result);
@@ -43,35 +43,35 @@ void close_result(lily_postgres_Result *result)
     result->is_closed = 1;
 }
 
-void destroy_Result(lily_postgres_Result *r)
+void destroy_Cursor(lily_postgres_Cursor *r)
 {
     close_result(r);
 }
 
 /**
-method Result.close(self: Result)
+method Cursor.close(self: Cursor)
 
-Close a `Result` and free all data associated with it. If this is not done
-manually, then it is done automatically when the `Result` is destroyed through
+Close a `Cursor` and free all data associated with it. If this is not done
+manually, then it is done automatically when the `Cursor` is destroyed through
 either the gc or refcounting.
 */
-void lily_postgres_Result_close(lily_state *s)
+void lily_postgres_Cursor_close(lily_state *s)
 {
-    lily_postgres_Result *to_close = ARG_Result(s, 0);
+    lily_postgres_Cursor *to_close = ARG_Cursor(s, 0);
 
     close_result(to_close);
     to_close->row_count = 0;
 }
 
 /**
-method Result.each_row(self: Result, fn: Function(List[String]))
+method Cursor.each_row(self: Cursor, fn: Function(List[String]))
 
 This loops through each row in `self`, calling `fn` for each row that is found.
 If `self` has no rows, or has been closed, then this does nothing.
 */
-void lily_postgres_Result_each_row(lily_state *s)
+void lily_postgres_Cursor_each_row(lily_state *s)
 {
-    lily_postgres_Result *boxed_result = ARG_Result(s, 0);
+    lily_postgres_Cursor *boxed_result = ARG_Cursor(s, 0);
 
     PGresult *raw_result = boxed_result->pg_result;
     if (raw_result == NULL || boxed_result->row_count == 0)
@@ -103,13 +103,13 @@ void lily_postgres_Result_each_row(lily_state *s)
 }
 
 /**
-method Result.row_count(self: Result): Integer
+method Cursor.row_count(self: Cursor): Integer
 
 Returns the number of rows present within `self`.
 */
-void lily_postgres_Result_row_count(lily_state *s)
+void lily_postgres_Cursor_row_count(lily_state *s)
 {
-    lily_postgres_Result *boxed_result = ARG_Result(s, 0);
+    lily_postgres_Cursor *boxed_result = ARG_Cursor(s, 0);
 
     lily_return_integer(s, boxed_result->current_row);
 }
@@ -131,14 +131,14 @@ void destroy_Conn(lily_postgres_Conn *conn_value)
 }
 
 /**
-method Conn.query(self: Conn, format: String, values: String...):Either[String, Result]
+method Conn.query(self: Conn, format: String, values: String...):Result[String, Cursor]
 
 Perform a query using `format`. Any `"?"` value found within `format` will be
 replaced with an entry from `values`.
 
-On success, the result is a `Right` containing a `Result`.
+On success, the result is a `Success` containing a `Cursor`.
 
-On failure, the result is a `Left` containing a `String` describing the error.
+On failure, the result is a `Failure` containing a `String` describing the error.
 */
 void lily_postgres_Conn_query(lily_state *s)
 {
@@ -156,7 +156,7 @@ void lily_postgres_Conn_query(lily_state *s)
 
         if (ch == '?') {
             if (arg_pos == num_values) {
-                lily_container_val *variant = lily_new_left();
+                lily_container_val *variant = lily_new_failure();
                 lily_string_val *sv = lily_new_string(
                         "Not enough arguments for format.\n");
                 lily_nth_set(variant, 0, lily_box_string(s, sv));
@@ -198,7 +198,7 @@ void lily_postgres_Conn_query(lily_state *s)
     if (status == PGRES_BAD_RESPONSE ||
         status == PGRES_NONFATAL_ERROR ||
         status == PGRES_FATAL_ERROR) {
-        lily_container_val *variant = lily_new_left();
+        lily_container_val *variant = lily_new_failure();
         lily_string_val *sv = lily_new_string(
                 PQerrorMessage(conn_value->conn));
         lily_nth_set(variant, 0, lily_box_string(s, sv));
@@ -206,14 +206,14 @@ void lily_postgres_Conn_query(lily_state *s)
         return;
     }
 
-    lily_postgres_Result *res = INIT_Result(s);
+    lily_postgres_Cursor *res = INIT_Cursor(s);
     res->current_row = 0;
     res->is_closed = 0;
     res->pg_result = raw_result;
     res->row_count = PQntuples(raw_result);
     res->column_count = PQnfields(raw_result);
 
-    lily_container_val *variant = lily_new_right();
+    lily_container_val *variant = lily_new_success();
     lily_nth_set(variant, 0, lily_box_foreign(s, (lily_foreign_val *)res));
     lily_return_variant(s, variant);
 }
@@ -258,13 +258,13 @@ void lily_postgres_Conn_open(lily_state *s)
             new_val->is_open = 1;
             new_val->conn = conn;
 
-            variant = lily_new_right();
+            variant = lily_new_success();
             lily_nth_set(variant, 0,
                     lily_box_foreign(s, (lily_foreign_val *)new_val));
             lily_return_variant(s, variant);
             break;
         default:
-            variant = lily_new_left();
+            variant = lily_new_failure();
             lily_string_val *sv = lily_new_string(PQerrorMessage(conn));
             lily_nth_set(variant, 0, lily_box_string(s, sv));
             lily_return_variant(s, variant);

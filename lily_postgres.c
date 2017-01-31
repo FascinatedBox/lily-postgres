@@ -147,7 +147,7 @@ void lily_postgres_Conn_query(lily_state *s)
     lily_container_val *vararg_lv = lily_arg_container(s, 2);
 
     int arg_pos = 0, fmt_index = 0, text_start = 0, text_stop = 0;
-    lily_msgbuf *msgbuf = lily_get_msgbuf(s);
+    lily_msgbuf *msgbuf = lily_get_clean_msgbuf(s);
 
     int num_values = lily_container_num_values(vararg_lv);
 

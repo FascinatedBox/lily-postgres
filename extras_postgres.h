@@ -10,7 +10,7 @@
 #define ID_Cursor(state) lily_cid_at(state, 0)
 
 #define INIT_Conn(state) \
-(lily_postgres_Conn *)lily_new_foreign(state, ID_Conn(s), (lily_destroy_func)destroy_Conn, sizeof(lily_postgres_Conn *))
+(lily_postgres_Conn *)lily_new_foreign(state, ID_Conn(s), (lily_destroy_func)destroy_Conn, sizeof(lily_postgres_Conn))
 
 #define INIT_Cursor(state) \
 (lily_postgres_Cursor *)lily_new_foreign(state, ID_Cursor(s), (lily_destroy_func)destroy_Cursor, sizeof(lily_postgres_Cursor *))

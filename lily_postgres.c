@@ -1,5 +1,9 @@
-/* This creates a shared library that allows Lily to access postgres, using
-   libpq. This can be used by any Lily runner. */
+/**
+library postgres
+
+This provides a very thin wrapper over libpq for Lily.
+*/
+
 #include <string.h>
 
 #include "libpq-fe.h"
@@ -7,26 +11,8 @@
 #include "lily_api_msgbuf.h"
 #include "lily_api_value.h"
 
-#include "extras_postgres.h"
-
-/**
-package postgres
-
-This package provides Lily with a simple wrapper over libpq. You'll need libpq's
-development headers, but there are no other requirements. You can install this
-using Lily's `garden` via:
-
-`garden install github Fascinatedbox/postgres`.
-*/
-
-/**
-class Cursor
-
-The `Cursor` class provides a wrapper over the result of querying the postgres
-database. The class provides a very basic set of methods to allow interaction
-with the rows as a `List[String]`.
-*/
-typedef struct {
+/** Begin autogen section. **/
+typedef struct lily_postgres_Cursor_ {
     LILY_FOREIGN_HEADER
     uint64_t column_count;
     uint64_t row_count;
@@ -34,6 +20,69 @@ typedef struct {
     uint64_t is_closed;
     PGresult *pg_result;
 } lily_postgres_Cursor;
+#define ARG_Cursor(state, index) \
+(lily_postgres_Cursor *)lily_arg_generic(state, index)
+#define ID_Cursor(state) lily_cid_at(state, 0)
+#define INIT_Cursor(state)\
+(lily_postgres_Cursor *) lily_new_foreign(state, ID_Cursor(state), (lily_destroy_func)destroy_Cursor, sizeof(lily_postgres_Cursor))
+
+typedef struct lily_postgres_Conn_ {
+    LILY_FOREIGN_HEADER
+    uint64_t is_open;
+    PGconn *conn;
+} lily_postgres_Conn;
+#define ARG_Conn(state, index) \
+(lily_postgres_Conn *)lily_arg_generic(state, index)
+#define ID_Conn(state) lily_cid_at(state, 1)
+#define INIT_Conn(state)\
+(lily_postgres_Conn *) lily_new_foreign(state, ID_Conn(state), (lily_destroy_func)destroy_Conn, sizeof(lily_postgres_Conn))
+
+const char *lily_postgres_table[] = {
+    "\02Cursor\0Conn\0"
+    ,"C\03Cursor"
+    ,"m\0close\0"
+    ,"m\0each_row\0(Function(List[String]))"
+    ,"m\0row_count\0:Integer"
+    ,"C\02Conn"
+    ,"m\0query\0(String,String):Result[String, Cursor]"
+    ,"m\0open\0(*String,*String,*String,*String,*String):Result[String, Conn]"
+    ,"Z"
+};
+#define Cursor_OFFSET 1
+#define Conn_OFFSET 5
+void lily_postgres_Cursor_close(lily_state *);
+void lily_postgres_Cursor_each_row(lily_state *);
+void lily_postgres_Cursor_row_count(lily_state *);
+void lily_postgres_Conn_query(lily_state *);
+void lily_postgres_Conn_open(lily_state *);
+void *lily_postgres_loader(lily_state *s, int id)
+{
+    switch (id) {
+        case Cursor_OFFSET + 1: return lily_postgres_Cursor_close;
+        case Cursor_OFFSET + 2: return lily_postgres_Cursor_each_row;
+        case Cursor_OFFSET + 3: return lily_postgres_Cursor_row_count;
+        case Conn_OFFSET + 1: return lily_postgres_Conn_query;
+        case Conn_OFFSET + 2: return lily_postgres_Conn_open;
+        default: return NULL;
+    }
+}
+/** End autogen section. **/
+
+/**
+foreign class Cursor {
+    layout {
+        uint64_t column_count;
+        uint64_t row_count;
+        uint64_t current_row;
+        uint64_t is_closed;
+        PGresult *pg_result;
+    }
+}
+
+The `Cursor` class provides a wrapper over the result of querying the postgres
+database. The class provides a very basic set of methods to allow interaction
+with the rows as a `List[String]`.
+*/
 
 void close_result(lily_postgres_Cursor *result)
 {
@@ -49,7 +98,7 @@ void destroy_Cursor(lily_postgres_Cursor *r)
 }
 
 /**
-method Cursor.close(self: Cursor)
+define Cursor.close
 
 Close a `Cursor` and free all data associated with it. If this is not done
 manually, then it is done automatically when the `Cursor` is destroyed through
@@ -64,7 +113,7 @@ void lily_postgres_Cursor_close(lily_state *s)
 }
 
 /**
-method Cursor.each_row(self: Cursor, fn: Function(List[String]))
+define Cursor.each_row(fn: Function(List[String]))
 
 This loops through each row in `self`, calling `fn` for each row that is found.
 If `self` has no rows, or has been closed, then this does nothing.
@@ -103,7 +152,7 @@ void lily_postgres_Cursor_each_row(lily_state *s)
 }
 
 /**
-method Cursor.row_count(self: Cursor): Integer
+define Cursor.row_count: Integer
 
 Returns the number of rows present within `self`.
 */
@@ -115,15 +164,15 @@ void lily_postgres_Cursor_row_count(lily_state *s)
 }
 
 /**
-class Conn
+foreign class Conn {
+    layout {
+        uint64_t is_open;
+        PGconn *conn;
+    }
+}
 
 The `Conn` class represents a connection to a postgres server.
 */
-typedef struct lily_postgres_Conn_ {
-    LILY_FOREIGN_HEADER
-    uint64_t is_open;
-    PGconn *conn;
-} lily_postgres_Conn;
 
 void destroy_Conn(lily_postgres_Conn *conn_value)
 {
@@ -131,7 +180,7 @@ void destroy_Conn(lily_postgres_Conn *conn_value)
 }
 
 /**
-method Conn.query(self: Conn, format: String, values: String...):Result[String, Cursor]
+define Conn.query(format: String, values: String...):Result[String, Cursor]
 
 Perform a query using `format`. Any `"?"` value found within `format` will be
 replaced with an entry from `values`.
@@ -219,7 +268,12 @@ void lily_postgres_Conn_query(lily_state *s)
 }
 
 /**
-method Conn.open(host: *String="", port: *String="", dbname: *String="", name: *String="", pass: *String=""):Either[String, Conn]
+static define Conn.open(
+    host: *String="",
+    port: *String="",
+    dbname: *String="",
+    name: *String="",
+    pass: *String=""):Result[String, Conn]
 
 Attempt to connect to the postgres server, using the values provided.
 
@@ -271,5 +325,3 @@ void lily_postgres_Conn_open(lily_state *s)
             break;
     }
 }
-
-#include "dyna_postgres.h"

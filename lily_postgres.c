@@ -277,9 +277,9 @@ static define Conn.open(
 
 Attempt to connect to the postgres server, using the values provided.
 
-On success, the result is a `Right` containing a newly-made `Conn`.
+If able to connect, the result is a `Success` containing the `Conn`.
 
-On failure, the result is a `Left` containing an error message.
+Otherwise, the result is a `Failure` containing an error message.
 */
 void lily_postgres_Conn_open(lily_state *s)
 {

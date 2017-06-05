@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <!-- The above 3 meta tags *must* come first in the head; any other head content must come *after* these tags -->
+        <title>postgres.Cursor : Lily</title>
+        <link href="../docstyle.css" rel="stylesheet">
+    </head>
+
+    <body role="document">
+        <section id='main'>
+<h1>Class Cursor</h1>
+<pre>(foreign) class Cursor {
+    uint64_t column_count;
+    uint64_t row_count;
+    uint64_t current_row;
+    uint64_t is_closed;
+    PGresult *pg_result;
+}</pre>
+<div class='doc'><p>
+The <code>Cursor</code> class provides a wrapper over the result of querying the postgres
+database. The class provides a very basic set of methods to allow interaction
+with the rows as a <code>List[String]</code>.</p></div>
+<h2>Methods</h2>
+<h3 id='method.close'><code>define <a href='#method.close'>close</a></code></h3>
+<div class='doc'><p>
+Close a <code>Cursor</code> and free all data associated with it. If this is not done
+manually, then it is done automatically when the <code>Cursor</code> is destroyed through
+either the gc or refcounting.</p></div>
+<h3 id='method.each_row'><code>define <a href='#method.each_row'>each_row</a>(fn: Function(List[String]))</code></h3>
+<div class='doc'><p>
+This loops through each row in <code>self</code>, calling <code>fn</code> for each row that is found.
+If <code>self</code> has no rows, or has been closed, then this does nothing.</p></div>
+<h3 id='method.row_count'><code>define <a href='#method.row_count'>row_count</a>: Integer</code></h3>
+<div class='doc'><p>
+Returns the number of rows present within <code>self</code>.</p></div>
+        </section>
+    </body>
+</html>

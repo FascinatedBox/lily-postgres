@@ -40,12 +40,12 @@ typedef struct lily_postgres_Conn_ {
 const char *lily_postgres_table[] = {
     "\02Cursor\0Conn\0"
     ,"C\03Cursor"
-    ,"m\0close\0"
-    ,"m\0each_row\0(Function(List[String]))"
-    ,"m\0row_count\0:Integer"
+    ,"m\0close\0(Cursor)"
+    ,"m\0each_row\0(Cursor,Function(List[String]))"
+    ,"m\0row_count\0(Cursor):Integer"
     ,"C\02Conn"
-    ,"m\0query\0(String,String):Result[String, Cursor]"
-    ,"m\0open\0(*String,*String,*String,*String,*String):Result[String, Conn]"
+    ,"m\0query\0(Conn,String,String...):Result[String,Cursor]"
+    ,"m\0open\0(*String,*String,*String,*String,*String):Result[String,Conn]"
     ,"Z"
 };
 #define Cursor_OFFSET 1

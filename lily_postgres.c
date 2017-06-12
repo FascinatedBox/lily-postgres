@@ -147,7 +147,7 @@ void lily_postgres_Cursor_each_row(lily_state *s)
         }
 
         lily_push_list(s, lv);
-        lily_call_exec_prepared(s, 1);
+        lily_call(s, 1);
     }
 }
 

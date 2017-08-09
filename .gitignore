@@ -1,6 +1,6 @@
 # Binary junk
 
-postgres.so
+src/postgres.so
 
 # CMake-related stuff.
 CMakeFiles

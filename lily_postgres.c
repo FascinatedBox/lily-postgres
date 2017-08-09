@@ -8,8 +8,7 @@ This provides a very thin wrapper over libpq for Lily.
 
 #include "libpq-fe.h"
 
-#include "lily_api_msgbuf.h"
-#include "lily_api_value.h"
+#include "lily.h"
 
 /** Begin autogen section. **/
 typedef struct lily_postgres_Cursor_ {
@@ -195,7 +194,7 @@ void lily_postgres_Conn_query(lily_state *s)
     lily_container_val *vararg_lv = lily_arg_container(s, 2);
 
     int arg_pos = 0, fmt_index = 0, text_start = 0, text_stop = 0;
-    lily_msgbuf *msgbuf = lily_get_clean_msgbuf(s);
+    lily_msgbuf *msgbuf = lily_msgbuf_get(s);
 
     int num_values = lily_con_size(vararg_lv);
 
@@ -236,7 +235,7 @@ void lily_postgres_Conn_query(lily_state *s)
         query_string = fmt;
     else {
         lily_mb_add_slice(msgbuf, fmt, text_start, text_stop);
-        query_string = lily_mb_get(msgbuf);
+        query_string = lily_mb_raw(msgbuf);
     }
 
     PGresult *raw_result = PQexec(conn_value->conn, query_string);

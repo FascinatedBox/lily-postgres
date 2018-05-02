@@ -1,0 +1,7 @@
+{
+    "version": "v0.1.0",
+    "summary": "Basic bindings for PostgreSQL.",
+    "source": "https://github.com/FascinatedBox/lily-postgres",
+    "license": "MIT",
+    "native": false
+}

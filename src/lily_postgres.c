@@ -36,7 +36,7 @@ typedef struct lily_postgres_Conn_ {
 #define INIT_Conn(state)\
 (lily_postgres_Conn *) lily_push_foreign(state, ID_Conn(state), (lily_destroy_func)destroy_Conn, sizeof(lily_postgres_Conn))
 
-const char *lily_postgres_table[] = {
+const char *lily_postgres_info_table[] = {
     "\02Cursor\0Conn\0"
     ,"C\03Cursor\0"
     ,"m\0close\0(Cursor)"
@@ -54,17 +54,16 @@ void lily_postgres_Cursor_each_row(lily_state *);
 void lily_postgres_Cursor_row_count(lily_state *);
 void lily_postgres_Conn_query(lily_state *);
 void lily_postgres_Conn_open(lily_state *);
-void *lily_postgres_loader(lily_state *s, int id)
-{
-    switch (id) {
-        case Cursor_OFFSET + 1: return lily_postgres_Cursor_close;
-        case Cursor_OFFSET + 2: return lily_postgres_Cursor_each_row;
-        case Cursor_OFFSET + 3: return lily_postgres_Cursor_row_count;
-        case Conn_OFFSET + 1: return lily_postgres_Conn_query;
-        case Conn_OFFSET + 2: return lily_postgres_Conn_open;
-        default: return NULL;
-    }
-}
+void (*lily_postgres_call_table[])(lily_state *s) = {
+    NULL,
+    NULL,
+    lily_postgres_Cursor_close,
+    lily_postgres_Cursor_each_row,
+    lily_postgres_Cursor_row_count,
+    NULL,
+    lily_postgres_Conn_query,
+    lily_postgres_Conn_open,
+};
 /** End autogen section. **/
 
 /**

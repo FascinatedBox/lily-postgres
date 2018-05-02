@@ -178,7 +178,7 @@ void destroy_Conn(lily_postgres_Conn *conn_value)
 }
 
 /**
-define Conn.query(format: String, values: String...):Result[String, Cursor]
+define Conn.query(format: String, values: String...): Result[String, Cursor]
 
 Perform a query using `format`. Any `"?"` value found within `format` will be
 replaced with an entry from `values`.
@@ -270,7 +270,7 @@ static define Conn.open(
     port: *String="",
     dbname: *String="",
     name: *String="",
-    pass: *String=""):Result[String, Conn]
+    pass: *String=""): Result[String, Conn]
 
 Attempt to connect to the postgres server, using the values provided.
 

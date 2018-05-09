@@ -47,14 +47,12 @@ const char *lily_postgres_info_table[] = {
     ,"m\0open\0(*String,*String,*String,*String,*String): Result[String,Conn]"
     ,"Z"
 };
-#define Cursor_OFFSET 1
-#define Conn_OFFSET 5
 void lily_postgres_Cursor_close(lily_state *);
 void lily_postgres_Cursor_each_row(lily_state *);
 void lily_postgres_Cursor_row_count(lily_state *);
 void lily_postgres_Conn_query(lily_state *);
 void lily_postgres_Conn_open(lily_state *);
-void (*lily_postgres_call_table[])(lily_state *s) = {
+lily_call_entry_func lily_postgres_call_table[] = {
     NULL,
     NULL,
     lily_postgres_Cursor_close,
